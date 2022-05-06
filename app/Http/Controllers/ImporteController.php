@@ -69,7 +69,10 @@ class ImporteController extends Controller {
         if (is_integer($oper) && $oper == $req->operacion) {  
             $resultado = DB::select('CALL sp_SaldoOperacion( ? );', array($oper));
             if (!is_array($resultado) || empty($resultado)) {
-                return response()->json(array('success' => false,'mensajes' =>  ['operacion' => ["La Operación $req->operacion no Existe."]]), 400);        
+                return response()->json(array('success' => false, 'mensajes' =>  ['operacion' => ["La Operación $req->operacion no Existe."]]), 400);
+            }
+            elseif (empty($resultado[0]->OrdPago)) {
+                return response()->json(array('success' => false, 'mensajes' =>  ['operacion' => ["La Operación $req->operacion no Tiene Orden de Pago."]]), 400);
             }
             return response()->json(array('success' => true, 'data' => $resultado[0]));
         }
