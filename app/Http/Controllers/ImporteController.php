@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -105,19 +106,19 @@ class ImporteController extends Controller {
         $cobDocNumero = str_replace(array(".", "-", ",", "/", " "), '', $req->CUIT_DNI);
         $cobNombre = $req->Nombre;
         $cobApellido = $req->Apellido;
-        $CuitCuil = str_replace(array(".", "-", ",", "/", " "), '', $req->CUIT_CUIL);
+        //$CuitCuil = str_replace(array(".", "-", ",", "/", " "), '', $req->CUIT_CUIL);
         $tipoDoc = $req->TipoDoc;
-        $tipoResponsable = $req->TipoResponsable;
-        $calle = $req->Calle;
+        //$tipoResponsable = $req->TipoResponsable;
+        /*$calle = $req->Calle;
         $altura = $req->Altura;
         $cp = $req->CP;
         $provincia = $req->Provincia;
         $sibId = $req->SibID;
-        $nroSituacionIB = $req->NroSituacionIB;
-        $tipoCuenta = $req->TipoCuenta;
+        $nroSituacionIB = $req->NroSituacionIB;*/
         $CBU = $req->CBU;
+        $tipoCuenta = $req->TipoCuenta;
         $importe = $req->Importe;
-        $retorno = $req->Retorno;
+        //$retorno = $req->Retorno;
 
         $usuarioAlta = !is_null($req->Usuario)? $req->Usuario : 'Admin';
         $fchLiquidacion = date("Y-m-d H:i:s");
@@ -137,10 +138,7 @@ class ImporteController extends Controller {
         
         $dato = array();
         
-        //DB::beginTransaction();
-        DB::select('START TRANSACTION;');
-        DB::select('SET @_numero = 0;');
-        $dato = DB::select('Call sp_CobradorSolicitud(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero);',
+        /*$dato = DB::select('Call sp_CobradorSolicitud(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero);',
         [$cobDocNumero, $codAgencia, $cobNombre, $cobApellido, $CuitCuil, $tipoDoc, $usuarioAlta, 
         $tipoResponsable, $calle, $altura, $cp, $provincia, $sibId, $nroSituacionIB]);
         $idCob = DB::select('Select @_numero;');
@@ -148,13 +146,29 @@ class ImporteController extends Controller {
             DB::select('ROLLBACK;');
             return response()->json(array('success' => false, 
                     'mensaje' => "#003. El Cobrador $cobDocNumero no corresponde con el código de Agencia $codAgencia."), 405);
+        }*/
+        try {
+            DB::beginTransaction();
+            //DB::select('START TRANSACTION;');
+            DB::select('SET @_numero = 0;');
+            $dato = DB::select('Call sp_ABM_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, @_numero)',
+            [$Operacion, $codAgencia, $cobDocNumero, $CBU, $tipoCuenta, $importe, $usuarioAlta]);
+            //$cobNombre = $req->Nombre;
+            //$cobApellido = $req->Apellido;
+            //$tipoDoc = $req->TipoDoc;
+            $idCob = DB::select('Select @_numero;');
+            if(empty($idCob)) {  DB::rollBack();
+                // DB::select('ROLLBACK;');
+                return response()->json(array('success' => false, 
+                        'mensajes' => "#003. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación."), 405);
+            }
         }
-        $dato = DB::select('Call',[]);
-        if(!is_array($dato) || empty($dato)) {  // DB::rollBack();
+        catch (Exception $e) {
             DB::select('ROLLBACK;');
             return response()->json(array('success' => false, 
-                    'mensajes' => "#003. No se obtuvo resultado de la Base de Datos. El Cobrador $cobDocNumero no corresponde con el código de Agencia $codAgencia."), 405);
+                    'mensajes' => "#004. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación. {$e->getMessage()}"), 405);
         }
+        
         DB::select('COMMIT;');
         //Retornar resultado
         return response()->json(["success"=>true,  
