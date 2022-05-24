@@ -25,4 +25,3 @@ $router->get('hola', function () use ($router) {
 });
 $router->get('saldoLiquidar', 'ImporteController@spImporteOperacion');
 $router->post('solicitarAcreditacion', 'ImporteController@spSolicitarAcreditacion');
-$router->get('/prueba/{id}', 'TestController@index');
