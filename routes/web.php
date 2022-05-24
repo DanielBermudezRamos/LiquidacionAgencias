@@ -24,5 +24,4 @@ $router->get('hola', function () use ($router) {
     return "<h1>Hola <strong>Mundo</strong></h1>";
 });
 $router->get('saldoLiquidar', 'ImporteController@spImporteOperacion');
-$router->post('acreditar', 'ImporteController@spAcreditarTransferencia');
-$router->get('/prueba/{id}', 'TestController@index');
+$router->post('solicitarAcreditacion', 'ImporteController@spSolicitarAcreditacion');
