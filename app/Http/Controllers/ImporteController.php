@@ -156,7 +156,7 @@ class ImporteController extends Controller {
             //$cobNombre = $req->Nombre;
             //$cobApellido = $req->Apellido;
             //$tipoDoc = $req->TipoDoc;
-            $idCob = DB::select('Select @_numero;');
+            $idCob = DB::select('Select @_numero numero;');
             if(empty($idCob)) {  DB::rollBack();
                 // DB::select('ROLLBACK;');
                 return response()->json(array('success' => false, 
@@ -172,9 +172,10 @@ class ImporteController extends Controller {
         DB::select('COMMIT;');
         //Retornar resultado
         return response()->json(["success"=>true,  
-                                "mensaje"=>"Se realizó exitosamente la transacción",
+                                "mensaje"=> "Se realizó exitosamente la transacción",
                                 'Tracking' => [                             
-                                    
+                                    "SolicitudID" => $idCob[0]->numero,
+                                    "CBU" => $CBU
                                 ]], 201);
     }
 }
