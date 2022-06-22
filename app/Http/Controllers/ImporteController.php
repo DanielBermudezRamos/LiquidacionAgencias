@@ -151,8 +151,8 @@ class ImporteController extends Controller {
             DB::beginTransaction();
             //DB::select('START TRANSACTION;');
             DB::select('SET @_numero = 0;');
-            $dato = DB::select('Call sp_ABM_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, @_numero)',
-            [$Operacion, $codAgencia, $cobDocNumero, $CBU, $tipoCuenta, $importe, $usuarioAlta]);
+            $dato = DB::select('Call sp_ABM_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero)',
+            [$Operacion, $codAgencia, $cobDocNumero, $cobNombre, $cobApellido, $CBU, $tipoCuenta, $importe, $usuarioAlta]);
             //$cobNombre = $req->Nombre;
             //$cobApellido = $req->Apellido;
             //$tipoDoc = $req->TipoDoc;
