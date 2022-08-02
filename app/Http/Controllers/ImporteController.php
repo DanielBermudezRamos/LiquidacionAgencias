@@ -163,7 +163,7 @@ class ImporteController extends Controller {
                         'mensajes' => "#003. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación."), 405);
             }
         }
-        catch (Exception $e) {
+        catch (Exception $e) { // (\Illuminate\Database\QueryException
             DB::select('ROLLBACK;');
             return response()->json(array('success' => false, 
                     'mensajes' => "#004. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación. {$e->getMessage()}"), 405);
