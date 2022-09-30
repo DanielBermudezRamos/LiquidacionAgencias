@@ -118,7 +118,7 @@ class ImporteController extends Controller {
         $CBU = $req->CBU;
         $tipoCuenta = $req->TipoCuenta;
         $importe = $req->Importe;
-        //$retorno = $req->Retorno;
+        $retorno = $req->Concepto; // return | transfer
 
         $usuarioAlta = !is_null($req->Usuario)? $req->Usuario : 'Admin';
         $fchLiquidacion = date("Y-m-d H:i:s");
@@ -135,7 +135,7 @@ class ImporteController extends Controller {
             return response()->json(array('success' => false,
                                           'mensaje' => "#002. Número de CBU $CBU inválido."), 405);
         };
-        
+        $retorno = ($retorno == 'return'); 
         $dato = array();
         
         /*$dato = DB::select('Call sp_CobradorSolicitud(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero);',
@@ -151,31 +151,35 @@ class ImporteController extends Controller {
             DB::beginTransaction();
             //DB::select('START TRANSACTION;');
             DB::select('SET @_numero = 0;');
-            $dato = DB::select('Call sp_ABM_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero)',
-            [$Operacion, $codAgencia, $cobDocNumero, $cobNombre, $cobApellido, $CBU, $tipoCuenta, $importe, $usuarioAlta]);
+            $dato = DB::select('Call sp_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero)',
+            [$Operacion, $codAgencia, $cobDocNumero, $cobNombre, $cobApellido, $CBU, $tipoCuenta, $importe, $retorno, $usuarioAlta]);
             //$cobNombre = $req->Nombre;
             //$cobApellido = $req->Apellido;
             //$tipoDoc = $req->TipoDoc;
             $idCob = DB::select('Select @_numero numero;');
-            if(empty($idCob)) {  DB::rollBack();
-                // DB::select('ROLLBACK;');
+            if(empty($idCob)) {  
+                DB::rollBack();
+                DB::select('INSERT INTO Control_Eventos (Evento, Descripcion) VALUES ( ?, ?)', 
+                ['API - spSolicitarAcreditacion (Error 03)','No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación']);
                 return response()->json(array('success' => false, 
                         'mensajes' => "#003. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación."), 405);
             }
         }
         catch (Exception $e) { // (\Illuminate\Database\QueryException
             DB::select('ROLLBACK;');
+            DB::select('INSERT INTO Control_Eventos (Evento, Descripcion) VALUES ( ?, ?)', ['API - spSolicitarAcreditacion (Error 04)',$e->getMessage()]);
             return response()->json(array('success' => false, 
                     'mensajes' => "#004. No se obtuvo resultado de la Base de Datos al Agregar la Solicitud de Acreditación. {$e->getMessage()}"), 405);
         }
         
         DB::select('COMMIT;');
         //Retornar resultado
-        return response()->json(["success"=>true,  
+        return response()->json(["success" => true,  
                                 "mensaje"=> "Se realizó exitosamente la transacción",
-                                'Tracking' => [                             
+                                'tracking' => [                             
                                     "SolicitudID" => $idCob[0]->numero,
-                                    "CBU" => $CBU
+                                    "CBU" => $CBU,
+                                    "Importe" => $importe
                                 ]], 201);
     }
 }
