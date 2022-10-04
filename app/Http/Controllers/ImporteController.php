@@ -1,12 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 
 class ImporteController extends Controller {
@@ -106,15 +104,7 @@ class ImporteController extends Controller {
         $cobDocNumero = str_replace(array(".", "-", ",", "/", " "), '', $req->CUIT_DNI);
         $cobNombre = $req->Nombre;
         $cobApellido = $req->Apellido;
-        //$CuitCuil = str_replace(array(".", "-", ",", "/", " "), '', $req->CUIT_CUIL);
-        $tipoDoc = $req->TipoDoc;
-        //$tipoResponsable = $req->TipoResponsable;
-        /*$calle = $req->Calle;
-        $altura = $req->Altura;
-        $cp = $req->CP;
-        $provincia = $req->Provincia;
-        $sibId = $req->SibID;
-        $nroSituacionIB = $req->NroSituacionIB;*/
+        
         $CBU = $req->CBU;
         $tipoCuenta = $req->TipoCuenta;
         $importe = $req->Importe;
@@ -138,24 +128,13 @@ class ImporteController extends Controller {
         $retorno = ($retorno == 'return'); 
         $dato = array();
         
-        /*$dato = DB::select('Call sp_CobradorSolicitud(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero);',
-        [$cobDocNumero, $codAgencia, $cobNombre, $cobApellido, $CuitCuil, $tipoDoc, $usuarioAlta, 
-        $tipoResponsable, $calle, $altura, $cp, $provincia, $sibId, $nroSituacionIB]);
-        $idCob = DB::select('Select @_numero;');
-        if ($idCob = -2) {// DB::rollBack();
-            DB::select('ROLLBACK;');
-            return response()->json(array('success' => false, 
-                    'mensaje' => "#003. El Cobrador $cobDocNumero no corresponde con el código de Agencia $codAgencia."), 405);
-        }*/
         try {
             DB::beginTransaction();
-            //DB::select('START TRANSACTION;');
+            
             DB::select('SET @_numero = 0;');
             $dato = DB::select('Call sp_SolicitudAcreditacion_Agencia("A", 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @_numero)',
             [$Operacion, $codAgencia, $cobDocNumero, $cobNombre, $cobApellido, $CBU, $tipoCuenta, $importe, $retorno, $usuarioAlta]);
-            //$cobNombre = $req->Nombre;
-            //$cobApellido = $req->Apellido;
-            //$tipoDoc = $req->TipoDoc;
+            
             $idCob = DB::select('Select @_numero numero;');
             if(empty($idCob)) {  
                 DB::rollBack();
